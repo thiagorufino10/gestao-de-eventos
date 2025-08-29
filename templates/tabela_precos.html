@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Tabela de Preços{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-4xl bg-white rounded-xl shadow-xl border border-gray-200 p-8">
+    <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+        <h1 class="text-3xl font-bold text-gray-800">Tabela de Preços</h1>
+        <a href="{{ url_for('index') }}"
+           class="inline-block bg-gray-400 hover:bg-gray-500 text-white font-semibold py-1.5 px-3 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-105">
+            Voltar
+        </a>
+    </div>
+
+    <!-- Formulário de cadastro de preços -->
+    <div class="bg-gray-50 rounded-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Adicionar Preço</h2>
+        
+        {% if error %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
+            <span class="block">{{ error }}</span>
+        </div>
+        {% endif %}
+
+        {% if success %}
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
+            <span class="block">{{ success }}</span>
+        </div>
+        {% endif %}
+
+        <form action="{{ url_for('tabela_precos') }}" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <label for="nome" class="block text-sm font-medium text-gray-700">Nome do Item/Serviço</label>
+                <input type="text" id="nome" name="nome" required
+                       class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+            </div>
+            <div>
+                <label for="tipo" class="block text-sm font-medium text-gray-700">Tipo</label>
+                <select id="tipo" name="tipo" required
+                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <option value="material">Material</option>
+                    <option value="mao_de_obra">Mão de Obra</option>
+                </select>
+            </div>
+            <div>
+                <label for="preco" class="block text-sm font-medium text-gray-700">Preço (R$)</label>
+                <input type="number" step="0.01" id="preco" name="preco" required
+                       class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+            </div>
+            <div class="md:col-span-3 flex justify-end">
+                <button type="submit"
+                        class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-md btn-hover">
+                    Cadastrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de preços existentes -->
+    <div class="bg-white rounded-lg p-6 border border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Preços Cadastrados</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Nome
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Tipo
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Preço
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for preco in precos %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ preco.nome }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {{ preco.tipo }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            R$ {{ "%.2f"|format(preco.preco) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

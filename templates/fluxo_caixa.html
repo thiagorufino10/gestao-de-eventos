@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Fluxo de Caixa{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-6xl bg-white rounded-xl shadow-xl border border-gray-200 p-8">
+    <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+        <h1 class="text-3xl font-bold text-gray-800">Fluxo de Caixa</h1>
+        <a href="{{ url_for('index') }}"
+           class="inline-block bg-gray-400 hover:bg-gray-500 text-white font-semibold py-1.5 px-3 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-105">
+            Voltar
+        </a>
+    </div>
+
+    <!-- Resumo financeiro -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-center">
+        <!-- Card de Receitas -->
+        <div class="bg-green-50 p-6 rounded-lg shadow-md border border-green-200">
+            <p class="text-xl font-semibold text-green-700">Receitas</p>
+            <p class="text-3xl font-bold mt-2 text-green-600">R$ {{ "%.2f"|format(receitas) }}</p>
+        </div>
+        <!-- Card de Despesas -->
+        <div class="bg-red-50 p-6 rounded-lg shadow-md border border-red-200">
+            <p class="text-xl font-semibold text-red-700">Despesas</p>
+            <p class="text-3xl font-bold mt-2 text-red-600">R$ {{ "%.2f"|format(despesas) }}</p>
+        </div>
+        <!-- Card de Saldo -->
+        <div class="p-6 rounded-lg shadow-md"
+             style="background-color: {% if saldo >= 0 %}#E0F2F1{% else %}#FCE4EC{% endif %}; border: 1px solid {% if saldo >= 0 %}#80CBC4{% else %}#E57373{% endif %};">
+            <p class="text-xl font-semibold text-gray-800">Saldo Atual</p>
+            <p class="text-3xl font-bold mt-2"
+               style="color: {% if saldo >= 0 %}#00796B{% else %}#C62828{% endif %};">R$ {{ "%.2f"|format(saldo) }}</p>
+        </div>
+    </div>
+    
+    <!-- Formulário para adicionar transação -->
+    <div class="bg-gray-50 rounded-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Adicionar Transação</h2>
+        
+        {% if error %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
+            <span class="block">{{ error }}</span>
+        </div>
+        {% endif %}
+
+        {% if success %}
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
+            <span class="block">{{ success }}</span>
+        </div>
+        {% endif %}
+        
+        <form action="{{ url_for('fluxo_caixa') }}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="data" class="block text-sm font-medium text-gray-700">Data</label>
+                <input type="date" id="data" name="data" required
+                       class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+            </div>
+            <div>
+                <label for="descricao" class="block text-sm font-medium text-gray-700">Descrição</label>
+                <input type="text" id="descricao" name="descricao" required
+                       class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+            </div>
+            <div>
+                <label for="tipo" class="block text-sm font-medium text-gray-700">Tipo</label>
+                <select id="tipo" name="tipo" required
+                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <option value="" disabled selected>Selecione o tipo</option>
+                    <option value="Receita">Receita</option>
+                    <option value="Despesa">Despesa</option>
+                </select>
+            </div>
+            <div>
+                <label for="valor" class="block text-sm font-medium text-gray-700">Valor (R$)</label>
+                <input type="number" id="valor" name="valor" step="0.01" required
+                       class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+            </div>
+            <div class="md:col-span-2">
+                <label for="observacoes" class="block text-sm font-medium text-gray-700">Observações</label>
+                <textarea id="observacoes" name="observacoes" rows="2"
+                          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
+            </div>
+            <div class="md:col-span-2 flex justify-end">
+                <button type="submit"
+                        class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-md btn-hover">
+                    Adicionar Transação
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de transações -->
+    <div class="bg-white rounded-lg p-6 border border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Histórico de Transações</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Data
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Descrição
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Tipo
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Valor
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Observações
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for transacao in transacoes %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ transacao.data }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {{ transacao.descricao }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if transacao.tipo == 'Receita' %} bg-green-100 text-green-800
+                                {% else %} bg-red-100 text-red-800
+                                {% endif %}">
+                                {{ transacao.tipo }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            R$ {{ "%.2f"|format(transacao.valor) }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            {{ transacao.observacoes }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
