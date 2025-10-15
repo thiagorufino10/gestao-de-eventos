@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2"><i class="bi bi-collection-fill"></i> Criação de Kit</h1>
+    </div>
+
+    <!-- Formulário de Cadastro de Kit -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h4 class="my-0 fw-normal">Novo Kit</h4>
+        </div>
+        <div class="card-body">
+            <form id="kit-form" method="POST" action="{{ url_for('kits') }}" enctype="multipart/form-data">
+                <div class="row g-3">
+                    <!-- Nome e Valor do Kit -->
+                    <div class="col-md-6">
+                        <label for="nome_kit" class="form-label fw-semibold">Nome do Kit</label>
+                        <input type="text" id="nome_kit" name="nome_kit" required class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="valor_kit" class="form-label fw-semibold">Valor de Venda do Kit (R$)</label>
+                        <input type="number" step="0.01" min="0" id="valor_kit" name="valor_kit" required class="form-control">
+                    </div>
+
+                    <!-- Upload de Imagem -->
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Imagem do Kit (opcional)</label>
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label for="foto_kit" class="d-flex flex-column align-items-center justify-content-center border-2 border-dashed rounded p-4 text-center cursor-pointer bg-light h-100">
+                                    <i class="bi bi-cloud-arrow-up fs-2 text-secondary"></i>
+                                    <span class="fw-semibold text-primary">Clique para fazer upload</span>
+                                </label>
+                                <input id="foto_kit" name="foto_kit" type="file" accept="image/*" class="d-none">
+                            </div>
+                            <div class="col-md-7">
+                                <div id="preview_box" class="position-relative border rounded bg-light d-flex align-items-center justify-content-center" style="min-height: 160px;">
+                                    <img id="preview_img" alt="Pré-visualização" class="d-none" style="max-height: 150px; max-width: 100%; object-fit: contain;">
+                                    <div id="placeholder" class="text-center text-muted">
+                                        <i class="bi bi-image fs-1"></i>
+                                        <p class="small">Pré-visualização da imagem</p>
+                                    </div>
+                                    <button type="button" id="btn_clear_photo" class="btn btn-sm btn-light border position-absolute top-0 end-0 m-2 d-none">Remover</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seleção de Produtos -->
+                    <div class="col-12 mt-4 pt-3 border-top">
+                         <h5 class="fw-bold mb-3">Composição do Kit (Itens que serão removidos do estoque)</h5>
+                         <div id="itens-container" class="mb-3"></div>
+                         <div class="row g-2 align-items-end p-3 bg-light border rounded">
+                             <div class="col-md-6">
+                                 <label for="item-select" class="form-label">Produto</label>
+                                 <select id="item-select" class="form-select">
+                                     <option value="" disabled selected>Escolha um item...</option>
+                                     {% for material in todos_materiais %}
+                                         <option value="{{ material.id }}" data-estoque="{{ material.quantidade_estoque }}" data-tipo="{{ material.tipo_material }}">
+                                             {{ material.nome }} (Estoque: {{ material.quantidade_estoque }})
+                                         </option>
+                                     {% endfor %}
+                                 </select>
+                             </div>
+                             <div class="col-md-3">
+                                 <label for="item-quantidade" class="form-label">Quantidade</label>
+                                 <input type="number" id="item-quantidade" class="form-control" value="1" min="1">
+                             </div>
+                             <div class="col-md-3">
+                                 <button type="button" class="btn btn-secondary w-100" onclick="adicionarItem()"><i class="bi bi-plus-circle"></i> Adicionar</button>
+                             </div>
+                         </div>
+                    </div>
+
+                    <!-- Botão Salvar -->
+                    <div class="col-12 d-grid mt-4 pt-4 border-top">
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold">Salvar Kit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Kits Cadastrados -->
+    <div class="card shadow-sm">
+        <div class="card-header"><h4 class="my-0 fw-normal">Kits Cadastrados</h4></div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Nome</th>
+                            <th>Itens</th>
+                            <th class="text-end">Valor (R$)</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center pe-3">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for k in kits_list %}
+                        <tr>
+                            <td class="ps-3 fw-medium">{{ k.nome }}</td>
+                            <td>{{ (kits_itens_map.get(k.id) or [])|join(", ") }}</td>
+                            <td class="text-end">R$ {{ "%.2f"|format(k.valor)|replace('.', ',') }}</td>
+                            <td class="text-center">
+                                {% if k.status == 'disponivel' %}
+                                    <span class="badge text-bg-success">Disponível</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger">Em Uso</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center pe-3">
+                                {% if k.foto_path %}
+                                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#modal-foto" data-bs-src="{{ url_for('static', filename=k.foto_path) }}">Ver Foto</button>
+                                {% endif %}
+                                <form method="POST" action="{{ url_for('deletar_kit', kit_id=k.id) }}" onsubmit="return confirm('Excluir este kit devolverá os itens ao estoque. Confirma?');" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" {% if k.status == 'em_uso' %}disabled title="Não é possível excluir um kit em uso"{% endif %}>Excluir</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center p-4">Nenhum kit cadastrado.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para visualizar foto -->
+<div class="modal fade" id="modal-foto" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Foto do Kit</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body text-center"><img id="modal-foto-img" src="" alt="Foto do Kit" class="img-fluid rounded"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let itemIndex = 0;
+
+    function adicionarItem() {
+        const select = document.getElementById('item-select');
+        const quantidadeInput = document.getElementById('item-quantidade');
+        const selectedOption = select.options[select.selectedIndex];
+
+        if (!selectedOption || !selectedOption.value) {
+            alert('Por favor, selecione um item.');
+            return;
+        }
+
+        const quantidadeSolicitada = parseInt(quantidadeInput.value);
+        const estoqueDisponivel = parseInt(selectedOption.dataset.estoque);
+        
+        if (quantidadeSolicitada <= 0) {
+            alert('A quantidade deve ser maior que zero.');
+            return;
+        }
+        if (quantidadeSolicitada > estoqueDisponivel) {
+            alert(`Erro: Estoque insuficiente! Disponível: ${estoqueDisponivel}`);
+            return;
+        }
+
+        const itemId = selectedOption.value;
+        const itemNome = selectedOption.text.split(' (')[0].trim();
+        const itemTipo = selectedOption.dataset.tipo;
+
+        const tipoBadges = {
+            'aluguel': 'bg-primary',
+            'venda': 'bg-info',
+            'descartavel': 'bg-secondary'
+        };
+        const badgeClass = tipoBadges[itemTipo] || 'bg-dark';
+
+        const itemHtml = `
+            <div class="alert alert-secondary d-flex justify-content-between align-items-center" id="item-row-${itemIndex}">
+                <div>
+                    <strong>${itemNome}</strong>
+                    <span class="badge ${badgeClass} ms-2">${itemTipo}</span>
+                    <small class="text-muted d-block">Quantidade: ${quantidadeSolicitada}</small>
+                </div>
+                <button type="button" class="btn-close" aria-label="Close" onclick="removerItem(${itemIndex})"></button>
+                <input type="hidden" name="itens[${itemIndex}][id]" value="${itemId}">
+                <input type="hidden" name="itens[${itemIndex}][quantidade]" value="${quantidadeSolicitada}">
+            </div>`;
+        
+        document.getElementById('itens-container').insertAdjacentHTML('beforeend', itemHtml);
+        itemIndex++;
+
+        // Reseta os campos após adicionar
+        select.selectedIndex = 0;
+        quantidadeInput.value = 1;
+    }
+
+    function removerItem(index) {
+        const itemRow = document.getElementById(`item-row-${index}`);
+        if (itemRow) {
+            itemRow.remove();
+        }
+    }
+
+    // Lógica de preview de imagem
+    const inputFile = document.getElementById('foto_kit');
+    const previewImg = document.getElementById('preview_img');
+    const placeholder = document.getElementById('placeholder');
+    const btnClear = document.getElementById('btn_clear_photo');
+
+    function limpaPreview() {
+        inputFile.value = '';
+        previewImg.src = '';
+        previewImg.classList.add('d-none');
+        placeholder.classList.remove('d-none');
+        btnClear.classList.add('d-none');
+    }
+
+    inputFile.addEventListener('change', () => {
+        const file = inputFile.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            previewImg.src = e.target.result;
+            previewImg.classList.remove('d-none');
+            placeholder.classList.add('d-none');
+            btnClear.classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
+    });
+
+    btnClear.addEventListener('click', limpaPreview);
+    
+    // Lógica do modal de visualização de foto
+    const modalFoto = document.getElementById('modal-foto');
+    if(modalFoto) {
+        modalFoto.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const imgSrc = button.getAttribute('data-bs-src');
+            modalFoto.querySelector('#modal-foto-img').src = imgSrc;
+        });
+    }
+</script>
+{% endblock %}
+

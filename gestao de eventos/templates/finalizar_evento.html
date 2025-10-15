@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2"><i class="bi bi-check2-circle"></i> Finalizar Evento</h1>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h4 class="my-0 fw-normal">Confirmação de Finalização</h4>
+        </div>
+        <div class="card-body">
+            <p class="lead">Você está finalizando o evento: <strong>#{{ evento.id }} - {{ evento.nome_evento }}</strong></p>
+            
+            <!-- O formulário agora aponta diretamente para a rota de processamento -->
+            <form method="POST" action="{{ url_for('finalizar_evento', evento_id=evento.id) }}">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Status do Recolhimento:</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="recolhimento_status" id="recolhimentoTotal" value="Total" checked>
+                        <label class="form-check-label" for="recolhimentoTotal">
+                            Recolhimento Total (Itens de aluguel retornam ao estoque)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="recolhimento_status" id="recolhimentoParcial" value="Parcial">
+                        <label class="form-check-label" for="recolhimentoParcial">
+                            Recolhimento Parcial (Houve avarias/perdas - itens não retornam ao estoque)
+                        </label>
+                    </div>
+                </div>
+
+                <div id="observacoesField" class="mb-3" style="display: none;">
+                    <label for="observacoes" class="form-label fw-semibold">Observações (obrigatório para recolhimento parcial):</label>
+                    <textarea id="observacoes" name="observacoes" rows="3" class="form-control"></textarea>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-start gap-2">
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> Confirmar Finalização</button>
+                    <a href="{{ url_for('controle_eventos') }}" class="btn btn-secondary"><i class="bi bi-x-lg"></i> Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Este JavaScript é simples e não-crítico. Ele apenas mostra/esconde o campo de observações. -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const observacoesField = document.getElementById('observacoesField');
+    const radios = document.querySelectorAll('input[name="recolhimento_status"]');
+
+    function toggleObservacoes() {
+        const isParcial = document.getElementById('recolhimentoParcial').checked;
+        observacoesField.style.display = isParcial ? 'block' : 'none';
+        observacoesField.querySelector('textarea').required = isParcial;
+    }
+
+    radios.forEach(radio => {
+        radio.addEventListener('change', toggleObservacoes);
+    });
+
+    // Executa uma vez no carregamento da página
+    toggleObservacoes();
+});
+</script>
+{% endblock %}

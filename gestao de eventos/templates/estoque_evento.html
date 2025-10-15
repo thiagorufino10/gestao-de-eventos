@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2"><i class="bi bi-box-seam"></i> Cadastro de Produto</h1>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <form id="produto-form" method="POST" action="{{ url_for('estoque_evento') }}" enctype="multipart/form-data">
+
+                <!-- SEÇÃO 1: INFORMAÇÕES BÁSICAS -->
+                <h5 class="fw-bold mb-3">1. Informações Básicas</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <label for="nome_material" class="form-label">Nome do Produto</label>
+                        <input type="text" id="nome_material" name="nome_material" required class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="tipo_material" class="form-label">Tipo de Produto</label>
+                        <select id="tipo_material" name="tipo_material" required class="form-select">
+                            <option value="aluguel">Aluguel</option>
+                            <option value="descartavel">Descartável</option>
+                            <option value="venda">Venda</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="unidade_medida" class="form-label">Unidade de Medida</label>
+                        <select id="unidade_medida" name="unidade_medida" class="form-select">
+                            <option value="unidade">Unidade (un)</option>
+                            <option value="pacote">Pacote (pct)</option>
+                            <option value="caixa">Caixa (cx)</option>
+                            <option value="saco">Saco</option>
+                            <option value="pote">Pote</option>
+                            <option value="metro">Metro (m)</option>
+                            <option value="litro">Litro (l)</option>
+                        </select>
+                    </div>
+                    <!-- CAMPO DINÂMICO QUE APARECE AQUI -->
+                    <div id="container_quantidade_por_unidade" class="col-12 d-none">
+                        <div class="card bg-light border">
+                            <div class="card-body">
+                                <label for="quantidade_venda" class="form-label fw-bold text-primary">Itens por Unidade</label>
+                                <input type="number" id="quantidade_venda" name="quantidade_venda" min="1" class="form-control" placeholder="Ex: 100">
+                                <div class="form-text">Se um pacote contém 100 itens, insira 100.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <!-- SEÇÃO 2: ESTOQUE E VALORES -->
+                <h5 class="fw-bold mb-3">2. Estoque e Preços</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label for="quantidade_estoque" class="form-label">Quantidade em Estoque</label>
+                        <input type="number" id="quantidade_estoque" name="quantidade_estoque" min="0" required class="form-control">
+                        <div id="quantidade_estoque_hint" class="form-text">A quantidade total disponível.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="preco_compra" class="form-label">Preço de Compra (R$)</label>
+                        <input type="number" step="0.01" id="preco_compra" name="preco_compra" min="0" required class="form-control">
+                        <div id="preco_compra_hint" class="form-text">O valor de custo do produto.</div>
+                    </div>
+                    <div class="col-12">
+                        <label for="preco_repasse" class="form-label" id="preco_repasse_label">Preço de Repasse (R$)</label>
+                        <input type="number" step="0.01" id="preco_repasse" name="preco_repasse" min="0" required class="form-control">
+                        <div id="preco_repasse_hint" class="form-text">O valor que será cobrado no evento.</div>
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+
+                <!-- SEÇÃO 3: MÍDIA -->
+                <h5 class="fw-bold mb-3">3. Mídia</h5>
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label for="foto_produto" class="d-flex flex-column align-items-center justify-content-center border-2 border-dashed rounded p-4 text-center cursor-pointer bg-light h-100">
+                            <i class="bi bi-cloud-arrow-up fs-2 text-secondary"></i>
+                            <span class="fw-semibold text-primary">Clique para fazer upload</span>
+                        </label>
+                        <input id="foto_produto" name="foto_produto" type="file" accept="image/*" class="d-none">
+                    </div>
+                    <div class="col-md-7">
+                        <div id="preview_box" class="position-relative border rounded bg-light d-flex align-items-center justify-content-center" style="min-height: 160px;">
+                            <img id="preview_img" alt="Pré-visualização" class="d-none" style="max-height: 150px; max-width: 100%; object-fit: contain;">
+                            <div id="placeholder" class="text-center text-muted">
+                                <i class="bi bi-image fs-1"></i>
+                                <p class="small">Pré-visualização da imagem</p>
+                            </div>
+                            <button type="button" id="btn_clear_photo" class="btn btn-sm btn-light border position-absolute top-0 end-0 m-2 d-none">Remover</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- BOTÕES DE AÇÃO -->
+                <div class="col-12 d-grid gap-2 d-md-flex justify-content-md-start mt-4 pt-4 border-top">
+                    <button type="submit" class="btn btn-primary btn-lg fw-bold">Cadastrar Produto</button>
+                    <a href="{{ url_for('kits') }}" class="btn btn-success btn-lg fw-bold">Ir para Cadastro de Kit</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Seleção de elementos do DOM
+    const tipoMaterialSelect = document.getElementById('tipo_material');
+    const unidadeMedidaSelect = document.getElementById('unidade_medida');
+    const containerQuantidade = document.getElementById('container_quantidade_por_unidade');
+    const quantidadeVendaInput = document.getElementById('quantidade_venda');
+    const precoRepasseLabel = document.getElementById('preco_repasse_label');
+    const precoRepasseHint = document.getElementById('preco_repasse_hint');
+    const quantidadeEstoqueHint = document.getElementById('quantidade_estoque_hint');
+
+    function updateFormVisibilityAndText() {
+        const tipo = tipoMaterialSelect.value;
+        const unidade = unidadeMedidaSelect.value;
+        const unidadesComQuantidade = ['pacote', 'caixa', 'pote', 'saco'];
+
+        // --- LÓGICA SIMPLIFICADA E CORRIGIDA PARA O CAMPO DINÂMICO ---
+        if (unidadesComQuantidade.includes(unidade)) {
+            containerQuantidade.classList.remove('d-none'); // Mostra o container
+            quantidadeVendaInput.required = true; // Torna o campo obrigatório
+        } else {
+            containerQuantidade.classList.add('d-none'); // Esconde o container
+            quantidadeVendaInput.required = false; // Deixa de ser obrigatório
+            quantidadeVendaInput.value = ''; // Limpa o valor para não ser enviado
+        }
+
+        // --- Lógica para atualizar os textos de ajuda ---
+        if (tipo === 'aluguel') {
+            precoRepasseLabel.textContent = 'Valor do Aluguel (R$)';
+            precoRepasseHint.textContent = `Valor do aluguel por ${unidade}.`;
+            quantidadeEstoqueHint.textContent = 'Quantidade disponível para aluguel.';
+        } else {
+            precoRepasseLabel.textContent = 'Preço de Venda / Repasse (R$)';
+            precoRepasseHint.textContent = `Valor de venda por ${unidade}.`;
+            quantidadeEstoqueHint.textContent = `Total de ${unidade}s em estoque.`;
+        }
+    }
+
+    // Adiciona os gatilhos para a função de atualização
+    tipoMaterialSelect.addEventListener('change', updateFormVisibilityAndText);
+    unidadeMedidaSelect.addEventListener('change', updateFormVisibilityAndText);
+    
+    // Executa a função uma vez no carregamento da página para definir o estado inicial
+    updateFormVisibilityAndText();
+
+    // Lógica de preview de imagem (mantida como estava)
+    const inputFile = document.getElementById('foto_produto');
+    const previewImg = document.getElementById('preview_img');
+    const placeholder = document.getElementById('placeholder');
+    const btnClear = document.getElementById('btn_clear_photo');
+
+    function limpaPreview() {
+        inputFile.value = '';
+        previewImg.src = '';
+        previewImg.classList.add('d-none');
+        placeholder.classList.remove('d-none');
+        btnClear.classList.add('d-none');
+    }
+
+    inputFile.addEventListener('change', () => {
+        const file = inputFile.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            previewImg.src = e.target.result;
+            previewImg.classList.remove('d-none');
+            placeholder.classList.add('d-none');
+            btnClear.classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
+    });
+
+    btnClear.addEventListener('click', limpaPreview);
+});
+</script>
+{% endblock %}

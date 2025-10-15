@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2"><i class="bi bi-envelope"></i> Configuração de Envio de E-mail</h1>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header"><h4 class="my-0 fw-normal">Cadastrar E-mail de Envio</h4></div>
+        <div class="card-body">
+            <form action="{{ url_for('configurar_email') }}" method="POST">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="email" class="form-label fw-semibold">E-mail de Envio</label>
+                        <input type="email" class="form-control" id="email" name="email" required placeholder="Digite seu e-mail de envio" value="{{ email_configurado['email'] if email_configurado else '' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="codigo_app" class="form-label fw-semibold">Código do App</label>
+                        <input type="text" class="form-control" id="codigo_app" name="codigo_app" required placeholder="Digite o código do aplicativo gerado" value="{{ email_configurado['codigo_app'] if email_configurado else '' }}">
+                    </div>
+                </div>
+                <hr class="my-4">
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg fw-bold">Salvar</button>
+                </div>
+            </form>
+
+            <!-- Mostrar e-mail configurado se já existir -->
+            {% if email_configurado %}
+            <div class="alert alert-info mt-3">
+                <strong>E-mail Atual:</strong> {{ email_configurado['email'] }}<br>
+                <strong>Código do App:</strong> {{ email_configurado['codigo_app'] }}
+                <form action="{{ url_for('excluir_email') }}" method="POST" class="mt-2">
+                    <button type="submit" class="btn btn-danger">Excluir E-mail</button>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Botão para exibir o modal com as instruções -->
+            <button type="button" class="btn btn-info mt-3" data-bs-toggle="modal" data-bs-target="#instrucoesModal">
+                Instruções para Configuração do Gmail
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de instruções -->
+    <div class="modal fade" id="instrucoesModal" tabindex="-1" aria-labelledby="instrucoesModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="instrucoesModalLabel">Instruções para Configuração do Gmail</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6><strong>Passo 1:</strong> Ativar a verificação em 2 etapas no seu Gmail:</h6>
+                    <ol>
+                        <li>Acesse a página de <a href="https://myaccount.google.com/security" target="_blank">segurança da sua conta do Google</a>.</li>
+                        <li>Ative a verificação em 2 etapas.</li>
+                    </ol>
+                    <h6><strong>Passo 2:</strong> Criar um código de app:</h6>
+                    <ol>
+                        <li>Após ativar a verificação em 2 etapas, vá até a seção de "Senhas de App".</li>
+                        <li>Escolha "Outro (personalizado)" e digite algo como "Flask Mail".</li>
+                        <li>Clique em "Gerar" e copie o código gerado.</li>
+                        <li>Este código será utilizado no campo "Código do App" ao cadastrar o seu e-mail aqui.</li>
+                    </ol>
+                    <p><strong>Observação:</strong> Este código gerado é o que permite que o seu app Flask envie e-mails em nome da sua conta do Gmail.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Se necessário, adicione aqui scripts específicos, como para validação ou animações
+</script>
+{% endblock %}

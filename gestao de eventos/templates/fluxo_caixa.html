@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2"><i class="bi bi-wallet2"></i> Fluxo de Caixa</h1>
+    </div>
+
+    <!-- Filtros e Relatório -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h4 class="my-0 fw-normal">Relatório e Filtros</h4>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('fluxo_caixa') }}">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="data_inicio" class="form-label">Data de Início</label>
+                        <input type="date" id="data_inicio" name="data_inicio" class="form-control" value="{{ data_inicio }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="data_fim" class="form-label">Data de Fim</label>
+                        <input type="date" id="data_fim" name="data_fim" class="form-control" value="{{ data_fim }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="tipo_filtro" class="form-label">Tipo de Transação</label>
+                        <select id="tipo_filtro" name="tipo_filtro" class="form-select">
+                            <option value="todos" {% if tipo_filtro == 'todos' %}selected{% endif %}>Todos</option>
+                            <option value="Receita" {% if tipo_filtro == 'Receita' %}selected{% endif %}>Receita</option>
+                            <option value="Despesa" {% if tipo_filtro == 'Despesa' %}selected{% endif %}>Despesa</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel-fill"></i> Filtrar</button>
+                        <button type="button" id="export-btn" class="btn btn-success w-100"><i class="bi bi-file-earmark-excel"></i> Exportar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cards de Resumo Financeiro (agora refletem os filtros) -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card text-bg-success text-center shadow-sm">
+                <div class="card-header fw-semibold">Receitas (Período)</div>
+                <div class="card-body"><p class="card-text display-5 fw-bold">R$ {{ "%.2f"|format(receitas)|replace('.', ',') }}</p></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-bg-danger text-center shadow-sm">
+                <div class="card-header fw-semibold">Despesas (Período)</div>
+                <div class="card-body"><p class="card-text display-5 fw-bold">R$ {{ "%.2f"|format(despesas)|replace('.', ',') }}</p></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card {% if saldo >= 0 %}text-bg-info{% else %}text-bg-warning{% endif %} text-center shadow-sm">
+                <div class="card-header fw-semibold">Saldo (Período)</div>
+                <div class="card-body"><p class="card-text display-5 fw-bold">R$ {{ "%.2f"|format(saldo)|replace('.', ',') }}</p></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulário para Adicionar Transação (dentro de um accordion) -->
+    <div class="accordion mb-4" id="accordionForm">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                    Adicionar Nova Transação
+                </button>
+            </h2>
+            <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionForm">
+                <div class="accordion-body">
+                    <form action="{{ url_for('fluxo_caixa') }}" method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-6"><label for="descricao" class="form-label">Descrição</label><input type="text" id="descricao" name="descricao" required class="form-control"></div>
+                            <div class="col-md-3"><label for="data" class="form-label">Data</label><input type="date" id="data" name="data" required class="form-control" value="{{ now.strftime('%Y-%m-%d') }}"></div>
+                            <div class="col-md-3"><label for="tipo" class="form-label">Tipo</label><select id="tipo" name="tipo" required class="form-select"><option value="Receita">Receita</option><option value="Despesa">Despesa</option></select></div>
+                            <div class="col-md-4"><label for="valor" class="form-label">Valor (R$)</label><input type="number" id="valor" name="valor" step="0.01" required class="form-control"></div>
+                            <div class="col-md-8"><label for="observacoes" class="form-label">Observações (opcional)</label><input type="text" id="observacoes" name="observacoes" class="form-control"></div>
+                        </div>
+                        <div class="d-grid d-md-flex justify-content-md-end mt-3">
+                             <button type="submit" class="btn btn-primary fw-bold">Adicionar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Histórico de Transações -->
+    <div class="card shadow-sm">
+        <div class="card-header"><h4 class="my-0 fw-normal">Histórico de Transações (Filtrado)</h4></div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="ps-3">Data</th><th scope="col">Descrição</th><th scope="col">Tipo</th><th scope="col" class="text-end">Valor</th><th scope="col" class="pe-3">Observações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transacao in transacoes %}
+                        <tr>
+                            <td class="ps-3">{{ transacao.data.strftime('%d/%m/%Y') if transacao.data else '' }}</td>
+                            <td class="fw-medium">{{ transacao.descricao }}</td>
+                            <td>
+                                {% if transacao.tipo == 'Receita' %}<span class="badge text-bg-success">{{ transacao.tipo }}</span>
+                                {% else %}<span class="badge text-bg-danger">{{ transacao.tipo }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">R$ {{ "%.2f"|format(transacao.valor)|replace('.', ',') }}</td>
+                            <td class="pe-3 text-muted small">{{ transacao.observacoes }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center p-4">Nenhuma transação encontrada para os filtros selecionados.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('export-btn').addEventListener('click', function() {
+    const dataInicio = document.getElementById('data_inicio').value;
+    const dataFim = document.getElementById('data_fim').value;
+    const tipoFiltro = document.getElementById('tipo_filtro').value;
+
+    const params = new URLSearchParams({
+        data_inicio: dataInicio,
+        data_fim: dataFim,
+        tipo_filtro: tipoFiltro
+    });
+    
+    window.location.href = `{{ url_for('exportar_fluxo_caixa_excel') }}?${params.toString()}`;
+});
+</script>
+{% endblock %}
+
