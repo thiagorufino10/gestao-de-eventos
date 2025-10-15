@@ -1,0 +1,4 @@
+# .gitignore
+
+# Ignorar arquivo de configuração de ambiente com credenciais
+.env
